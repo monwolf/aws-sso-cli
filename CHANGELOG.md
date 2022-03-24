@@ -5,6 +5,7 @@
 ### Bug Fixes
 
  * No longer generate errors for empty History tag in cache #305
+ * Fixed error when tried to save more than 2.5Kbytes in wincred #308
 
 ## [v1.7.4] - 2022-02-25
 
