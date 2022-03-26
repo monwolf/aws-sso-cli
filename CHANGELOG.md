@@ -6,6 +6,17 @@
 
  * No longer generate errors for empty History tag in cache #305
  * Fixed error when tried to save more than 2.5Kbytes in wincred #308
+ * No longer print the federated console url on errors by default #314
+
+### New Features
+
+ * Add support for --url-action printurl and exec #303
+ * `list` command now prints how long until the AWS SSO session expires #313
+
+### Changes
+
+ * Add additional unit tests
+ * Document how using `$AWS_PROFILE` with AWS SSO CLI auto-refreshes credentials #270
 
 ## [v1.7.4] - 2022-02-25
 
