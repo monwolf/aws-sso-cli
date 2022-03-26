@@ -204,26 +204,28 @@ func (kr *KeyringStore) joinAndGetKeyringData(key string) ([]byte, error) {
 	data := []byte{}
 	var err error
 	var payload_size uint64
+	var chunk []byte
 
-	for {
-		var chunk []byte
+	chunk, err = kr.getKeyringData(fmt.Sprintf("%s_%d", key, i))
+	if err != nil {
+		return nil, err
+	}
+	if len(chunk) < 8 {
+		return nil, fmt.Errorf("Invalid stored data in wincred. There's not enough data")
+	}
+
+	payload_size, chunk = getUINT64FromBytes(chunk[:8]), chunk[8:]
+	remaining_bytes := payload_size - uint64(len(chunk))
+	data = append(data, chunk...)
+
+	for i = 1; remaining_bytes > 0; i++ {
+
 		chunk, err = kr.getKeyringData(fmt.Sprintf("%s_%d", key, i))
-		if i == 0 {
-			if err != nil {
-				return nil, err
-			}
-			if len(chunk) < 8 {
-				return nil, fmt.Errorf("Invalid stored data in wincred. There's not enough data")
-			}
-			payload_size, chunk = getUINT64FromBytes(chunk[:8]), chunk[8:]
+		if err != nil {
+			return nil, err
 		}
-		if chunk != nil && len(chunk) <= WINCRED_MAX_LENGTH {
-			data = append(data, chunk...)
-		}
-		if err != nil || len(chunk) < WINCRED_MAX_LENGTH {
-			break
-		}
-		i++
+		data = append(data, chunk...)
+		remaining_bytes = remaining_bytes - uint64(len(chunk))
 	}
 
 	if payload_size != uint64(len(data)) {
@@ -450,11 +452,11 @@ func (kr *KeyringStore) setMyGOOS(os string) {
 // Create a 8-byte array from uint64
 func getBytesFromUINT64(i uint64) []byte {
 	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, uint64(i))
+	binary.BigEndian.PutUint64(b, uint64(i))
 	return b
 }
 
 // Create uint64 from byte array
 func getUINT64FromBytes(b []byte) uint64 {
-	return binary.LittleEndian.Uint64(b)
+	return binary.BigEndian.Uint64(b)
 }

@@ -192,14 +192,6 @@ func (suite *KeyringSuite) TestRoleCredentials() {
 
 func (suite *KeyringSuite) TestSplitCredentials() {
 	t := suite.T()
-	rc := RoleCredentials{
-		RoleName:        "MyRole",
-		AccountId:       234566767,
-		AccessKeyId:     "some not-so-secret-string",
-		SecretAccessKey: "a string we actually want to keep secret",
-		SessionToken:    "Another secret string",
-		Expiration:      time.Now().Unix(),
-	}
 
 	large_rc := RoleCredentials{
 		RoleName:    "MyRole",
@@ -216,12 +208,12 @@ func (suite *KeyringSuite) TestSplitCredentials() {
 	}
 
 	suite.store.setMyGOOS("linux")
-	err := suite.store.SaveRoleCredentials("bar", rc)
+	err := suite.store.SaveRoleCredentials("bar", large_rc)
 	assert.NoError(t, err)
 	rc2 := RoleCredentials{}
 	err = suite.store.GetRoleCredentials("bar", &rc2)
 	assert.NoError(t, err)
-	assert.Equal(t, rc, rc2)
+	assert.Equal(t, large_rc, rc2)
 	err = suite.store.DeleteRoleCredentials("bar")
 	assert.NoError(t, err)
 
@@ -238,30 +230,19 @@ func (suite *KeyringSuite) TestSplitCredentials() {
 	// Replace a chunk with wrong data
 	err = suite.store.SaveRoleCredentials("bar", large_rc)
 	assert.NoError(t, err)
+	data, err := suite.store.getKeyringData(fmt.Sprintf("%s_%d", RECORD_KEY, 1))
+	assert.NoError(t, err)
 	err = suite.store.setStorageData([]byte{0}, fmt.Sprintf("%s_%d", RECORD_KEY, 1), KEYRING_ID)
 	assert.NoError(t, err)
 	rc2 = RoleCredentials{}
 	err = suite.store.GetRoleCredentials("bar", &rc2)
 	assert.Error(t, err)
 
-	err = suite.store.SaveRoleCredentials("bar", rc)
-	assert.NoError(t, err)
-	rc2 = RoleCredentials{}
-	err = suite.store.GetRoleCredentials("bar", &rc2)
-	assert.NoError(t, err)
-	assert.Equal(t, rc, rc2)
-	err = suite.store.DeleteRoleCredentials("bar")
+	// Restore env
+	suite.store.setMyGOOS("")
+	err = suite.store.setStorageData(data, fmt.Sprintf("%s_%d", RECORD_KEY, 1), KEYRING_ID)
 	assert.NoError(t, err)
 
-	suite.store.setMyGOOS("")
-	err = suite.store.SaveRoleCredentials("bar", rc)
-	assert.NoError(t, err)
-	rc2 = RoleCredentials{}
-	err = suite.store.GetRoleCredentials("bar", &rc2)
-	assert.NoError(t, err)
-	assert.Equal(t, rc, rc2)
-	err = suite.store.DeleteRoleCredentials("bar")
-	assert.NoError(t, err)
 }
 
 func (suite *KeyringSuite) TestErrorReadKeyring() {
